@@ -1,0 +1,14 @@
+{
+    "name": "Storage Bootcamp Dev Container Definition",
+    "dockerComposeFile": ["./docker-compose-devcontainer.yml"],
+    "service": "storage-bootcamp",
+    "initializeCommand": "scripts/devcontainer.sh up",
+    "workspaceFolder": "/go/src/github.com/codetodo-io/storage-bootcamp",
+    "remoteEnv": { },
+    "extensions": [
+      "ms-vscode.cpptools",
+      "golang.go",
+      "ms-python.python",
+	    "ms-python.vscode-pylance"
+    ]
+}
