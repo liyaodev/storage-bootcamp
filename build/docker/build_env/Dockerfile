@@ -16,6 +16,9 @@ RUN go install -v github.com/ramya-rao-a/go-outline@latest && \
     go install -v honnef.co/go/tools/cmd/staticcheck@latest && \
     go clean --modcache
 
+RUN go env -w GO111MODULE=on && \
+    go env -w GOPROXY=https://goproxy.cn,direct
+
 RUN echo 'root:root' | chpasswd
 
 # 构建Tini的多服务容器

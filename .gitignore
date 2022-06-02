@@ -17,3 +17,4 @@
 # Env
 volumes
 .vscode
+venv/

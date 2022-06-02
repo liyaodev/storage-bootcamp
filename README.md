@@ -2,7 +2,7 @@
 
 ### Etcd 系列
 
-* [互斥锁](./etcd/bootcamp/mutex)
-* [队列](./etcd/bootcamp/queue)
-* [服务发现](./etcd/bootcamp/discovery)
+* [互斥锁](./etcd/mutex)
+* [队列](./etcd/queue)
+* [服务发现](./etcd/discovery)
 
