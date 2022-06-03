@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -6,58 +6,53 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 
 	"go.etcd.io/etcd/clientv3"
+	"github.com/codetodo-io/storage-bootcamp/etcd/discovery/common"
 )
 
-var (
-	dialTimeout  = 5 * time.Second
-	leaseTimeout = int64(3)
-	etcdPrefix   = "/etcd/discovery"
-)
-
-type ServerInfo struct {
-	ip   string
-	port int
+type WorkerInfo struct {
+	IP   string
+	Port int
 }
 
-type ServerRegister struct {
+type Worker struct {
+	workerInfo WorkerInfo
 	cli        *clientv3.Client
 	leaseID    clientv3.LeaseID
 	keepAliveC <-chan *clientv3.LeaseKeepAliveResponse
-	serverInfo ServerInfo
 }
 
-func (s *ServerRegister) getKey() string {
-	return etcdPrefix + "/" + s.serverInfo.ip + ":" + strconv.Itoa(s.serverInfo.port)
+func (s *Worker) getKey() string {
+	return common.etcdPrefix + "/" + s.workerInfo.IP + ":" + strconv.Itoa(s.workerInfo.Port)
 }
 
-func (s *ServerRegister) getVal() string {
-	return "http://" + s.serverInfo.ip + ":" + strconv.Itoa(s.serverInfo.port)
+func (s *Worker) getVal() string {
+	return "http://" + s.workerInfo.IP + ":" + strconv.Itoa(s.workerInfo.Port)
 }
 
-func NewServerRegister(endpoints []string, serverInfo ServerInfo, lease int64) (*ServerRegister, error) {
+func NewWorker(endpoints []string, workerInfo WorkerInfo, lease int64) (*Worker, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: dialTimeout,
+		DialTimeout: common.dialTimeout,
 	})
 	if err != nil {
 		log.Fatal("Conn Etcd error: ", err)
+		return nil, err
 	}
-	server := &ServerRegister{
+	worker := &Worker{
 		cli:        cli,
-		serverInfo: serverInfo,
+		workerInfo: workerInfo,
 	}
 
-	if err := server.PutKeyWithLease(lease); err != nil {
+	if err := worker.PutKeyWithLease(lease); err != nil {
 		return nil, err
 	}
 
-	return server, nil
+	return worker, nil
 }
 
-func (s *ServerRegister) PutKeyWithLease(lease int64) error {
+func (s *Worker) PutKeyWithLease(lease int64) error {
 	// 设置租约时间
 	resp, err := s.cli.Grant(context.Background(), lease)
 	if err != nil {
@@ -79,14 +74,14 @@ func (s *ServerRegister) PutKeyWithLease(lease int64) error {
 	return nil
 }
 
-func (s *ServerRegister) ListenRespC() {
+func (s *Worker) ListenRespC() {
 	for leaseKeepAliveResp := range s.keepAliveC {
 		log.Println("续约成功", leaseKeepAliveResp)
 	}
 	log.Println("停止续约")
 }
 
-func (s *ServerRegister) Close() error {
+func (s *Worker) Close() error {
 	if _, err := s.cli.Revoke(context.Background(), s.leaseID); err != nil {
 		return err
 	}
@@ -109,28 +104,4 @@ func getLocalIP() (string, error) {
 		}
 	}
 	return "", errors.New("Can not find the client ip address!")
-}
-
-func main() {
-	var endpoints = []string{"etcd:2379"}
-	ip, err := getLocalIP()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	serverInfo := &ServerInfo{
-		ip:   ip,
-		port: 8888,
-	}
-	server, err := NewServerRegister(endpoints, *serverInfo, leaseTimeout)
-	if err != nil {
-		log.Fatal("New Server Register error: ", err)
-	}
-
-	// 响应监听
-	go server.ListenRespC()
-	select {
-	// case <-time.After(20 * time.Second):
-	// 	server.Close()
-	}
 }

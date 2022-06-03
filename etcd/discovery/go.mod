@@ -1,4 +1,4 @@
-module github.com/codetodo-io/storage-bootcamp/etcd/discovery/client
+module discovery
 
 go 1.18
 
