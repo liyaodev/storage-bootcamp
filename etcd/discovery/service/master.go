@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"go.etcd.io/etcd/clientv3"
-	"github.com/codetodo-io/storage-bootcamp/etcd/discovery/common"
 )
 
 type Master struct {
@@ -16,10 +16,10 @@ type Master struct {
 	lock       sync.Mutex
 }
 
-func NewMaster(endpoints []string) (*Master, error) {
+func NewMaster(endpoints []string, dialTimeout time.Duration) (*Master, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: common.dialTimeout,
+		DialTimeout: dialTimeout,
 	})
 	if err != nil {
 		log.Fatal("Conn Etcd error: ", err)

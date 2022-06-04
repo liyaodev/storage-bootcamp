@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	"go.etcd.io/etcd/clientv3"
-	"github.com/codetodo-io/storage-bootcamp/etcd/discovery/common"
 )
 
 type WorkerInfo struct {
@@ -21,20 +21,21 @@ type Worker struct {
 	cli        *clientv3.Client
 	leaseID    clientv3.LeaseID
 	keepAliveC <-chan *clientv3.LeaseKeepAliveResponse
+	prefix     string
 }
 
 func (s *Worker) getKey() string {
-	return common.etcdPrefix + "/" + s.workerInfo.IP + ":" + strconv.Itoa(s.workerInfo.Port)
+	return s.prefix + "/" + s.workerInfo.IP + ":" + strconv.Itoa(s.workerInfo.Port)
 }
 
 func (s *Worker) getVal() string {
 	return "http://" + s.workerInfo.IP + ":" + strconv.Itoa(s.workerInfo.Port)
 }
 
-func NewWorker(endpoints []string, workerInfo WorkerInfo, lease int64) (*Worker, error) {
+func NewWorker(endpoints []string, workerInfo WorkerInfo, dialTimeout time.Duration, prefix string, lease int64) (*Worker, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: common.dialTimeout,
+		DialTimeout: dialTimeout,
 	})
 	if err != nil {
 		log.Fatal("Conn Etcd error: ", err)
@@ -43,6 +44,7 @@ func NewWorker(endpoints []string, workerInfo WorkerInfo, lease int64) (*Worker,
 	worker := &Worker{
 		cli:        cli,
 		workerInfo: workerInfo,
+		prefix:     prefix,
 	}
 
 	if err := worker.PutKeyWithLease(lease); err != nil {
@@ -89,7 +91,7 @@ func (s *Worker) Close() error {
 	return s.cli.Close()
 }
 
-func getLocalIP() (string, error) {
+func GetLocalIP() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "", err

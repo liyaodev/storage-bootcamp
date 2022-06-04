@@ -1,4 +1,4 @@
-module discovery
+module github.com/codetodo-io/storage-bootcamp
 
 go 1.18
 
