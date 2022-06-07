@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "/proto";
+
+message HelloRequest {
+    string data = 1;
+}
+
+message HelloResponse {
+    int32 code = 1;
+    string value = 2;
+}
+
+service Hello {
+    rpc Route (HelloRequest) returns (HelloResponse){};
+}
